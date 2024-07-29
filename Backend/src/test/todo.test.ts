@@ -38,6 +38,12 @@ describe("Todo API", () => {
     expect(response.body.title).toBe("Test Todo");
   });
 
+  it("should return 404 when fetching a non-existent todo by ID", async () => {
+    const response = await request(app).get(`/todos/999`);
+    expect(response.status).toBe(404);
+    expect(response.text).toBe("Todo not found");
+  });
+
   it("should create a new todo", async () => {
     const response = await request(app).post("/todos").send({
       title: "New Todo",
@@ -47,6 +53,16 @@ describe("Todo API", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.title).toBe("New Todo");
+  });
+
+  it("should return 400 when creating a todo with invalid data", async () => {
+    const response = await request(app).post("/todos").send({
+      title: "",
+      description: "No Title",
+      completed: false,
+    });
+
+    expect(response.status).toBe(400);
   });
 
   it("should update a todo by ID", async () => {
@@ -67,6 +83,17 @@ describe("Todo API", () => {
     expect(response.body.completed).toBe(true);
   });
 
+  it("should return 404 when updating a non-existent todo by ID", async () => {
+    const response = await request(app).put(`/todos/999`).send({
+      title: "Updated Todo",
+      description: "Updated Description",
+      completed: true,
+    });
+
+    expect(response.status).toBe(404);
+    expect(response.text).toBe("Todo not found");
+  });
+
   it("should delete a todo by ID", async () => {
     const todo = await AppDataSource.getRepository(Todo).save({
       title: "Delete Todo",
@@ -81,6 +108,28 @@ describe("Todo API", () => {
     const deletedTodo = await AppDataSource.getRepository(Todo).findOne({
       where: { id: todo.id },
     });
-    expect(deletedTodo).toBeNull(); // Use toBeNull() instead of toBeUndefined()
+    expect(deletedTodo).toBeNull();
+  });
+
+  it("should return 404 when deleting a non-existent todo by ID", async () => {
+    const response = await request(app).delete(`/todos/999`);
+    expect(response.status).toBe(404);
+    expect(response.text).toBe("Todo not found");
+  });
+
+  it("should return 400 when updating a todo with invalid data", async () => {
+    const todo = await AppDataSource.getRepository(Todo).save({
+      title: "Update Todo",
+      description: "Update Description",
+      completed: false,
+    });
+
+    const response = await request(app).put(`/todos/${todo.id}`).send({
+      title: "",
+      description: "Updated Description",
+      completed: true,
+    });
+
+    expect(response.status).toBe(400);
   });
 });
